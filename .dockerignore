@@ -1,0 +1,53 @@
+# Dependencies
+node_modules
+npm-debug.log
+# Testing
+coverage
+.nyc_output
+
+# Build artifacts
+dist
+build
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+
+# Documentation (not needed in container)
+*.md
+!README.md
+LICENSE
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+SECURITY.md
+AUDIT.md
+
+# Examples and configs
+examples
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Logs
+logs
+*.log

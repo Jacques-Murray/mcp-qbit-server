@@ -1,0 +1,134 @@
+# Caddy Reverse Proxy Configuration
+# Caddy automatically obtains and renews SSL certificates from Let's Encrypt
+#
+# Note: Rate limiting requires the caddy-ratelimit plugin (https://github.com/mholt/caddy-ratelimit)
+# Install with: xcaddy build --with github.com/mholt/caddy-ratelimit
+
+# Simple configuration with automatic HTTPS
+mcp-qbit.example.com {
+    # Caddy automatically handles HTTPS
+    reverse_proxy localhost:8000
+
+    # Rate limiting (requires rate limit module)
+    rate_limit {
+        zone mcp_zone {
+            key {remote_host}
+            events 10
+            window 1s
+        }
+    }
+
+    # Request logging
+    log {
+        output file /var/log/caddy/mcp-qbit-access.log
+        format json
+    }
+
+    # Additional security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-XSS-Protection "1; mode=block"
+        -Server
+    }
+}
+
+# Configuration with Basic Authentication
+mcp-qbit-secure.example.com {
+    # Basic Authentication
+    basicauth * {
+        # Generate hash with: caddy hash-password
+        username $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4wHHSdWRZaq
+    }
+
+    reverse_proxy localhost:8000 {
+        # Custom headers
+        header_up X-Authenticated-User {http.auth.user.id}
+        
+        # Timeouts
+        transport http {
+            dial_timeout 60s
+            response_header_timeout 60s
+        }
+    }
+
+    # Rate limiting
+    rate_limit {
+        zone secure_zone {
+            key {remote_host}
+            events 5
+            window 1s
+        }
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/mcp-qbit-secure-access.log
+        format json
+    }
+
+    # Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-XSS-Protection "1; mode=block"
+        -Server
+    }
+}
+
+# Advanced configuration with path-based routing and IP restrictions
+mcp-qbit-advanced.example.com {
+    # IP whitelist
+    @allowed {
+        remote_ip 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+    }
+
+    # Deny access from non-whitelisted IPs
+    @denied {
+        not remote_ip 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+    }
+    
+    handle @denied {
+        respond "Access denied" 403
+    }
+
+    # Health check endpoint (no restrictions)
+    handle /health {
+        reverse_proxy localhost:8000
+    }
+
+    # Main RPC endpoint (restricted)
+    handle /rpc {
+        basicauth {
+            username $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4wHHSdWRZaq
+        }
+
+        rate_limit {
+            zone rpc_zone {
+                key {remote_host}
+                events 5
+                window 1s
+            }
+        }
+
+        reverse_proxy localhost:8000
+    }
+
+    # Catch-all (deny)
+    handle {
+        respond "Not found" 404
+    }
+
+    log {
+        output file /var/log/caddy/mcp-qbit-advanced-access.log
+        format json
+    }
+}
+
+# To generate password hash:
+# caddy hash-password
+# Enter password when prompted
+# Copy the hash to the configuration
+
+# To run Caddy with this configuration:
+# caddy run --config Caddyfile
+# or
+# caddy start --config Caddyfile
