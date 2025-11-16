@@ -20,21 +20,45 @@ Running behind a reverse proxy provides:
 
 ## nginx Configuration
 
-The nginx example configuration (`nginx.conf`) demonstrates proper usage of rate limiting:
+Three nginx configuration files are provided to support different deployment scenarios:
 
-- **Rate limit zones** (`limit_req_zone`) are defined at the `http` level (lines 6-7)
+### Configuration Files
+
+1. **`nginx.conf`** - Complete standalone example
+   - Includes full `http {}` block wrapper
+   - Use this as a reference or as a standalone nginx configuration
+   - ⚠️ **DO NOT** include this file in an existing nginx.conf that already has an `http {}` block
+
+2. **`nginx-http.conf`** - HTTP-level directives snippet
+   - Contains `limit_req_zone` directives that must be in the `http {}` context
+   - Add these lines to your existing nginx.conf's `http {}` block
+   - Must be included before the server blocks that use these zones
+
+3. **`nginx-servers.conf`** - Server blocks snippet
+   - Contains the actual server configurations for proxying to MCP
+   - Can be included in your nginx configuration after the http-level directives are in place
+   - Includes both basic and authenticated server examples
+
+### Usage Scenarios
+
+**Scenario 1: Standalone nginx for MCP only**
+- Use `nginx.conf` directly as your nginx configuration
+- This file contains everything needed in a single file
+
+**Scenario 2: Adding MCP to existing nginx setup**
+1. Add the contents of `nginx-http.conf` to your existing `nginx.conf` inside the `http {}` block
+2. Add the contents of `nginx-servers.conf` to your sites configuration (e.g., `/etc/nginx/sites-available/mcp-qbit`)
+3. Enable the site and reload nginx
+
+### Rate Limiting Architecture
+
+This configuration demonstrates proper usage of nginx rate limiting:
+- **Rate limit zones** (`limit_req_zone`) are defined at the `http` level
 - **Rate limit enforcement** (`limit_req`) is applied within individual `server` blocks
 
-This structure follows nginx best practices:
+This follows nginx best practices:
 - `limit_req_zone` creates shared memory zones and **must** be defined in the `http` context
 - `limit_req` applies the rate limiting rules and is used within `server` or `location` blocks
-
-### Usage Options
-
-You can use this configuration in two ways:
-
-1. **Standalone configuration**: Include the entire file with its `http` block wrapper
-2. **Integration with existing nginx.conf**: Extract only the `limit_req_zone` directives and add them to your main `nginx.conf` file's `http` context, then add the `server` blocks to your sites configuration
 
 ## Examples Included
 
