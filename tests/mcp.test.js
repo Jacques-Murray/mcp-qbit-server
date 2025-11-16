@@ -93,7 +93,7 @@ describe('MCP Server (qBittorrent)', () => {
 
       // Check that the mock was called correctly
       expect(mockGetTorrents).toHaveBeenCalledTimes(1);
-      expect(mockGetTorrents).toHaveBeenCalledWith('all', undefined);
+      expect(mockGetTorrents).toHaveBeenCalledWith('all');
 
       // Check that the tool simplified the data
       expect(res.body.result.content).toHaveLength(2);
@@ -156,7 +156,7 @@ describe('MCP Server (qBittorrent)', () => {
 
       // Ensure the client was not called
       expect(mockAddTorrent).not.toHaveBeenCalled();
-    })
+    });
   });
 
   describe('JSON-RPC batch handling', () => {

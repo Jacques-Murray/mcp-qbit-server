@@ -43,7 +43,7 @@ QBIT_USERNAME=admin
 QBIT_PASSWORD=secret
 ```
 
-All variables are optional except the qBittorrent credentials; defaults fall back to `PORT=8000`.
+The qBittorrent credentials and `QBIT_BASE_URL` are required. `PORT` is optional and defaults to `8000`.
 
 ## Installation & Local Run
 ```bash
@@ -92,7 +92,7 @@ curl -X POST http://localhost:8000/rpc \
 ## Available Tools
 | Tool Name | Description | Arguments |
 | --- | --- | --- |
-| `qbit/getTorrents` | Lists torrents and returns a simplified view (`name`, `hash`, `size`, `progress`, `state`, `eta`). | `filter?: string`, `status?: string` |
+| `qbit/getTorrents` | Lists torrents and returns a simplified view (`name`, `hash`, `size`, `progress`, `state`, `eta`). Filter status values (e.g., `all`, `downloading`, `seeding`) via the `filter` argument. | `filter?: string` |
 | `qbit/addTorrent` | Adds a new torrent using a magnet or `.torrent` URL, returning a success flag. | `url: string (valid URL)` |
 
 Each tool enforces its own Zod schema before touching qBittorrent, so malformed payloads never reach the client.
