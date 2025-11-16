@@ -109,7 +109,7 @@ describe('MCP Server (qBittorrent)', () => {
       expect(res.body.error).toBeUndefined(); // The RPC call succeeded
       expect(res.body.result.isError).toBe(true); // The *tool* failed
       expect(res.body.result.message).toContain('Invalid argument');
-      expect(res.body.data._errors).toBeDefined(); // Zod error data
+      expect(res.body.result.data._errors).toBeDefined(); // Zod error data
 
       // Ensure the client was not called
       expect(mockGetTorrents).not.toHaveBeenCalled();
@@ -148,7 +148,7 @@ describe('MCP Server (qBittorrent)', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body.result.isError).toBe(true);
       expect(res.body.result.message).toContain('Invalid argument');
-      expect(res.body.data._errors).toBeDefined();
+      expect(res.body.result.data._errors).toBeDefined();
 
       // Ensure the client was not called
       expect(mockAddTorrent).not.toHaveBeenCalled();
