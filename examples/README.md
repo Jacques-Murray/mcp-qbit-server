@@ -18,6 +18,24 @@ Running behind a reverse proxy provides:
 - A reverse proxy with authentication, OR
 - A firewall that restricts access to trusted networks only
 
+## nginx Configuration
+
+The nginx example configuration (`nginx.conf`) demonstrates proper usage of rate limiting:
+
+- **Rate limit zones** (`limit_req_zone`) are defined at the `http` level (lines 6-7)
+- **Rate limit enforcement** (`limit_req`) is applied within individual `server` blocks
+
+This structure follows nginx best practices:
+- `limit_req_zone` creates shared memory zones and **must** be defined in the `http` context
+- `limit_req` applies the rate limiting rules and is used within `server` or `location` blocks
+
+### Usage Options
+
+You can use this configuration in two ways:
+
+1. **Standalone configuration**: Include the entire file with its `http` block wrapper
+2. **Integration with existing nginx.conf**: Extract only the `limit_req_zone` directives and add them to your main `nginx.conf` file's `http` context, then add the `server` blocks to your sites configuration
+
 ## Examples Included
 
 1. **nginx** - Most popular, high-performance reverse proxy
