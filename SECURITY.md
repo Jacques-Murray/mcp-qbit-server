@@ -76,7 +76,7 @@ The server implements the following security headers:
 If you discover a security vulnerability, please follow these steps:
 
 1. **Do NOT** open a public GitHub issue
-2. Email the maintainer directly at: jacquesmmurray@gmail.com
+2. Submit a [GitHub Security Advisory](https://github.com/<OWNER>/<REPO>/security/advisories/new) to privately report the vulnerability to the maintainers.
 3. Include:
    - Description of the vulnerability
    - Steps to reproduce the issue
