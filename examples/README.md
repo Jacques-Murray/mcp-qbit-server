@@ -20,17 +20,25 @@ Running behind a reverse proxy provides:
 
 ## nginx Configuration
 
-The nginx example provides three configuration files to suit different deployment scenarios:
+The nginx example provides multiple configuration files to suit different deployment scenarios:
 
 ### Files Provided
 
-1. **`nginx-http.conf`** - HTTP context directives (rate limiting zones)
-   - Contains `limit_req_zone` directives that MUST be in the `http {}` block
+**For integration with existing nginx:**
+
+1. **`nginx-http.conf`** or **`nginx-http-context.conf`** - HTTP context directives (rate limiting zones)
+   - Both files contain `limit_req_zone` directives that MUST be in the `http {}` block
+   - `nginx-http-context.conf` has more detailed documentation and examples
+   - `nginx-http.conf` is a simpler version
    - Add these directives to your main nginx.conf's `http {}` section
 
-2. **`nginx-server.conf`** - Server block configurations
-   - Contains the actual server blocks for proxying to the MCP server
+2. **`nginx-server.conf`** or **`nginx-server-blocks.conf`** - Server block configurations
+   - Both files contain the actual server blocks for proxying to the MCP server
+   - `nginx-server-blocks.conf` references `nginx-http-context.conf`
+   - `nginx-server.conf` references `nginx-http.conf`
    - Can be included in nginx.conf or copied to sites-available/
+
+**For standalone deployment:**
 
 3. **`nginx-standalone.conf`** - Complete standalone configuration
    - Full nginx config with `http {}` block wrapper
@@ -41,7 +49,7 @@ The nginx example provides three configuration files to suit different deploymen
 
 **Option 1: Integration with existing nginx installation** (Recommended)
 
-1. Add the rate limiting zones from `nginx-http.conf` to your main `/etc/nginx/nginx.conf`:
+1. Add the rate limiting zones from `nginx-http.conf` (or `nginx-http-context.conf`) to your main `/etc/nginx/nginx.conf`:
    ```nginx
    http {
        # Your existing configuration...
@@ -54,7 +62,7 @@ The nginx example provides three configuration files to suit different deploymen
    }
    ```
 
-2. Copy `nginx-server.conf` to your sites configuration:
+2. Copy `nginx-server.conf` (or `nginx-server-blocks.conf`) to your sites configuration:
    ```bash
    sudo cp nginx-server.conf /etc/nginx/sites-available/mcp-qbit
    sudo ln -s /etc/nginx/sites-available/mcp-qbit /etc/nginx/sites-enabled/
