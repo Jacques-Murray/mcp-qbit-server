@@ -37,7 +37,10 @@ The nginx example provides three configuration files to suit different deploymen
    - Use for testing or as a template for new installations
    - **Do NOT include this in an existing nginx.conf** (nested `http {}` blocks are not allowed)
 
-### Usage Options
+#### Step 1: Add HTTP-level directives
+File: `nginx-http-context.conf`
+- Contains `limit_req_zone` directives that **must** be in the `http` context
+- Add these lines to your main `nginx.conf` inside the existing `http {` block:
 
 **Option 1: Integration with existing nginx installation** (Recommended)
 
