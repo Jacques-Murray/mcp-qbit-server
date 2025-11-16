@@ -27,7 +27,7 @@ services:
   # MCP qBittorrent Server
   mcp-qbit-server:
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile
     container_name: mcp-qbit-server
     environment:
