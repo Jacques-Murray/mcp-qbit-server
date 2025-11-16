@@ -20,45 +20,60 @@ Running behind a reverse proxy provides:
 
 ## nginx Configuration
 
-Three nginx configuration files are provided to support different deployment scenarios:
+The nginx example provides three configuration files to suit different deployment scenarios:
 
-### Configuration Files
+### Files Provided
 
-1. **`nginx.conf`** - Complete standalone example
-   - Includes full `http {}` block wrapper
-   - Use this as a reference or as a standalone nginx configuration
-   - ⚠️ **DO NOT** include this file in an existing nginx.conf that already has an `http {}` block
+1. **`nginx-http.conf`** - HTTP context directives (rate limiting zones)
+   - Contains `limit_req_zone` directives that MUST be in the `http {}` block
+   - Add these directives to your main nginx.conf's `http {}` section
 
-2. **`nginx-http.conf`** - HTTP-level directives snippet
-   - Contains `limit_req_zone` directives that must be in the `http {}` context
-   - Add these lines to your existing nginx.conf's `http {}` block
-   - Must be included before the server blocks that use these zones
+2. **`nginx-server.conf`** - Server block configurations
+   - Contains the actual server blocks for proxying to the MCP server
+   - Can be included in nginx.conf or copied to sites-available/
 
-3. **`nginx-servers.conf`** - Server blocks snippet
-   - Contains the actual server configurations for proxying to MCP
-   - Can be included in your nginx configuration after the http-level directives are in place
-   - Includes both basic and authenticated server examples
+3. **`nginx-standalone.conf`** - Complete standalone configuration
+   - Full nginx config with `http {}` block wrapper
+   - Use for testing or as a template for new installations
+   - **Do NOT include this in an existing nginx.conf** (nested `http {}` blocks are not allowed)
 
 ### Usage Scenarios
 
-**Scenario 1: Standalone nginx for MCP only**
-- Use `nginx.conf` directly as your nginx configuration
-- This file contains everything needed in a single file
+**Option 1: Integration with existing nginx installation** (Recommended)
 
-**Scenario 2: Adding MCP to existing nginx setup**
-1. Add the contents of `nginx-http.conf` to your existing `nginx.conf` inside the `http {}` block
-2. Add the contents of `nginx-servers.conf` to your sites configuration (e.g., `/etc/nginx/sites-available/mcp-qbit`)
-3. Enable the site and reload nginx
+1. Add the rate limiting zones from `nginx-http.conf` to your main `/etc/nginx/nginx.conf`:
+   ```nginx
+   http {
+       # Your existing configuration...
+       
+       # Add these lines from nginx-http.conf
+       limit_req_zone $binary_remote_addr zone=mcp_limit:10m rate=10r/s;
+       limit_req_zone $binary_remote_addr zone=mcp_secure_limit:10m rate=5r/s;
+       
+       # Rest of your configuration...
+   }
+   ```
 
-### Rate Limiting Architecture
+2. Copy `nginx-server.conf` to your sites configuration:
+   ```bash
+   sudo cp nginx-server.conf /etc/nginx/sites-available/mcp-qbit
+   sudo ln -s /etc/nginx/sites-available/mcp-qbit /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
 
-This configuration demonstrates proper usage of nginx rate limiting:
-- **Rate limit zones** (`limit_req_zone`) are defined at the `http` level
-- **Rate limit enforcement** (`limit_req`) is applied within individual `server` blocks
+**Option 2: Standalone configuration**
 
-This follows nginx best practices:
-- `limit_req_zone` creates shared memory zones and **must** be defined in the `http` context
-- `limit_req` applies the rate limiting rules and is used within `server` or `location` blocks
+Use `nginx-standalone.conf` as a complete configuration file:
+```bash
+nginx -c /path/to/nginx-standalone.conf -t
+nginx -c /path/to/nginx-standalone.conf
+```
+
+### Important Notes
+
+- Rate limiting zones (`limit_req_zone`) **must** be defined in the `http {}` context
+- Rate limiting enforcement (`limit_req`) is applied within `server {}` or `location {}` blocks
+- Never nest `http {}` blocks - this will cause nginx configuration errors
 
 ## Examples Included
 
