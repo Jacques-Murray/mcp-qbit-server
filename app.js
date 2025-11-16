@@ -31,6 +31,7 @@ function createApp() {
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
+    // Strict CSP since this is a JSON-only API with no browser rendering
     res.setHeader('Content-Security-Policy', "default-src 'none'");
     next();
   });
