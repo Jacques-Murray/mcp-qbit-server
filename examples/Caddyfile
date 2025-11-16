@@ -1,5 +1,8 @@
 # Caddy Reverse Proxy Configuration
 # Caddy automatically obtains and renews SSL certificates from Let's Encrypt
+#
+# Note: Rate limiting requires the caddy-ratelimit plugin (https://github.com/mholt/caddy-ratelimit)
+# Install with: xcaddy build --with github.com/mholt/caddy-ratelimit
 
 # Simple configuration with automatic HTTPS
 mcp-qbit.example.com {
