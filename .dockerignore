@@ -5,7 +5,6 @@ package-lock.json
 
 # Testing
 coverage
-*.test.js
 .nyc_output
 
 # Build artifacts
