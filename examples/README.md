@@ -20,61 +20,63 @@ Running behind a reverse proxy provides:
 
 ## nginx Configuration
 
-We provide **three nginx configuration files** to support different deployment scenarios:
+The nginx example provides three configuration files to suit different deployment scenarios:
 
-### 1. `nginx-standalone.conf` - Complete Standalone Configuration
+### Files Provided
 
-**Use when:** You want a complete, ready-to-use nginx configuration.
+1. **`nginx-http.conf`** - HTTP context directives (rate limiting zones)
+   - Contains `limit_req_zone` directives that MUST be in the `http {}` block
+   - Add these directives to your main nginx.conf's `http {}` section
 
-- Contains a full `http` block with all necessary directives
-- ⚠️ **WARNING:** Do NOT include this in an existing nginx.conf that already has an `http` block (nested `http` blocks are not allowed)
-- **Usage:** `sudo nginx -c /path/to/nginx-standalone.conf` or replace your main nginx.conf
+2. **`nginx-server.conf`** - Server block configurations
+   - Contains the actual server blocks for proxying to the MCP server
+   - Can be included in nginx.conf or copied to sites-available/
 
-### 2. `nginx-http-context.conf` + `nginx-server-blocks.conf` - Integration Snippets
-
-**Use when:** You have an existing nginx setup and want to integrate the MCP qBittorrent Server.
+3. **`nginx-standalone.conf`** - Complete standalone configuration
+   - Full nginx config with `http {}` block wrapper
+   - Use for testing or as a template for new installations
+   - **Do NOT include this in an existing nginx.conf** (nested `http {}` blocks are not allowed)
 
 #### Step 1: Add HTTP-level directives
 File: `nginx-http-context.conf`
 - Contains `limit_req_zone` directives that **must** be in the `http` context
 - Add these lines to your main `nginx.conf` inside the existing `http {` block:
 
-```nginx
-http {
-    # ... your existing configuration ...
-    
-    # Add rate limiting zones for MCP qBittorrent Server:
-    limit_req_zone $binary_remote_addr zone=mcp_limit:10m rate=10r/s;
-    limit_req_zone $binary_remote_addr zone=mcp_secure_limit:10m rate=5r/s;
-    
-    # ... rest of your configuration ...
-}
+**Option 1: Integration with existing nginx installation** (Recommended)
+
+1. Add the rate limiting zones from `nginx-http.conf` to your main `/etc/nginx/nginx.conf`:
+   ```nginx
+   http {
+       # Your existing configuration...
+       
+       # Add these lines from nginx-http.conf
+       limit_req_zone $binary_remote_addr zone=mcp_limit:10m rate=10r/s;
+       limit_req_zone $binary_remote_addr zone=mcp_secure_limit:10m rate=5r/s;
+       
+       # Rest of your configuration...
+   }
+   ```
+
+2. Copy `nginx-server.conf` to your sites configuration:
+   ```bash
+   sudo cp nginx-server.conf /etc/nginx/sites-available/mcp-qbit
+   sudo ln -s /etc/nginx/sites-available/mcp-qbit /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+**Option 2: Standalone configuration**
+
+Use `nginx-standalone.conf` as a complete configuration file:
+```bash
+nginx -c /path/to/nginx-standalone.conf -t
+nginx -c /path/to/nginx-standalone.conf
 ```
 
-#### Step 2: Add server blocks
-File: `nginx-server-blocks.conf`
-- Contains the `server` blocks for the MCP qBittorrent Server
-- **Option A:** Include directly in nginx.conf's `http` block:
-  ```nginx
-  http {
-      # ... (including the rate limit zones from step 1) ...
-      include /path/to/nginx-server-blocks.conf;
-  }
-  ```
-- **Option B:** Copy to sites-available (Debian/Ubuntu style):
-  ```bash
-  sudo cp nginx-server-blocks.conf /etc/nginx/sites-available/mcp-qbit
-  sudo ln -s /etc/nginx/sites-available/mcp-qbit /etc/nginx/sites-enabled/
-  sudo nginx -t && sudo systemctl reload nginx
-  ```
+### Important Notes
 
-### nginx Rate Limiting Best Practices
-
-nginx requires a specific structure for rate limiting:
-- `limit_req_zone` creates shared memory zones and **must** be defined in the `http` context
-- `limit_req` applies the rate limiting rules and is used within `server` or `location` blocks
-
-Our separate configuration files ensure you can properly integrate rate limiting regardless of your existing nginx setup.
+- Rate limiting zones (`limit_req_zone`) **must** be defined in the `http {}` context
+- Rate limiting enforcement (`limit_req`) is applied within `server {}` or `location {}` blocks
+- Never nest `http {}` blocks - this will cause nginx configuration errors
 
 ## Examples Included
 
