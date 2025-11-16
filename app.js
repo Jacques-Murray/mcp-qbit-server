@@ -25,7 +25,17 @@ const { AddTorrentTool } = require('./lib/mcp/tools/AddTorrentTool');
  */
 function createApp() {
   const app = express();
-  app.use(express.json());
+  
+  // Security headers
+  app.disable('x-powered-by');
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Content-Security-Policy', "default-src 'none'");
+    next();
+  });
+  
+  app.use(express.json({ limit: '1mb' })); // Limit payload size
 
   // --- 1. Create Dependencies (Dependency Injection) ---
 
@@ -33,7 +43,8 @@ function createApp() {
   const qbitClient = new QBitClient(
     config.qbit.baseUrl,
     config.qbit.username,
-    config.qbit.password
+    config.qbit.password,
+    config.qbit.timeout
   );
 
   // The ToolRegistry holds all available tools
@@ -55,16 +66,29 @@ function createApp() {
    * Main JSON-RPC 2.0 endpoint.
    */
   app.post('/rpc', async (req, res) => {
-    const rpcRequest = req.body;
+    try {
+      const rpcRequest = req.body;
 
-    // Delegate all processing to the handler
-    const rpcResponse = await rpcHandler.handleRequest(rpcRequest);
+      // Delegate all processing to the handler
+      const rpcResponse = await rpcHandler.handleRequest(rpcRequest);
 
-    if (rpcResponse) {
-      res.status(200).json(rpcResponse);
-    } else {
-      // Per JSON-RPC spec, notifications (no 'id') get no response
-      res.status(204).send();
+      if (rpcResponse) {
+        res.status(200).json(rpcResponse);
+      } else {
+        // Per JSON-RPC spec, notifications (no 'id') get no response
+        res.status(204).send();
+      }
+    } catch (error) {
+      console.error('[App] Unexpected error in /rpc handler:', error.message);
+      res.status(500).json({
+        jsonrpc: '2.0',
+        id: null,
+        error: {
+          code: -32603,
+          message: 'Internal server error',
+          data: process.env.NODE_ENV !== 'production' ? error.message : null,
+        },
+      });
     }
   });
 
@@ -73,6 +97,31 @@ function createApp() {
    */
   app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
+  });
+
+  /**
+   * Global error handler for Express
+   */
+  app.use((err, req, res, next) => {
+    console.error('[App] Unhandled error:', err.message);
+    
+    // Handle JSON parsing errors
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+      return res.status(400).json({
+        jsonrpc: '2.0',
+        id: null,
+        error: {
+          code: -32700,
+          message: 'Parse error',
+          data: 'Invalid JSON format',
+        },
+      });
+    }
+    
+    res.status(500).json({
+      error: 'Internal server error',
+      message: process.env.NODE_ENV !== 'production' ? err.message : undefined,
+    });
   });
 
   return app;

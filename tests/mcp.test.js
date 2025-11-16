@@ -236,4 +236,74 @@ describe('MCP Server (qBittorrent)', () => {
       expect(res.body.error.code).toBe(-32600);
     });
   });
+
+  describe('Error Handling', () => {
+    it('should handle client errors gracefully', async () => {
+      mockGetTorrents.mockRejectedValue(new Error('Connection refused'));
+
+      const rpcRequest = createRpcRequest('tools/call', {
+        name: 'qbit/getTorrents',
+        arguments: { filter: 'all' },
+      });
+
+      const res = await request(app).post('/rpc').send(rpcRequest);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.result.isError).toBe(true);
+      expect(res.body.result.message).toContain('failed');
+    });
+
+    it('should validate empty filter strings', async () => {
+      const rpcRequest = createRpcRequest('tools/call', {
+        name: 'qbit/getTorrents',
+        arguments: { filter: '   ' },
+      });
+
+      const res = await request(app).post('/rpc').send(rpcRequest);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.result.isError).toBe(true);
+      expect(res.body.result.message).toContain('Invalid argument');
+    });
+
+    it('should handle non-array responses from getTorrents', async () => {
+      mockGetTorrents.mockResolvedValue(null);
+
+      const rpcRequest = createRpcRequest('tools/call', {
+        name: 'qbit/getTorrents',
+        arguments: { filter: 'all' },
+      });
+
+      const res = await request(app).post('/rpc').send(rpcRequest);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.result.isError).toBe(false);
+      expect(res.body.result.content).toEqual([]);
+    });
+
+    it('should reject invalid URL formats for addTorrent', async () => {
+      const rpcRequest = createRpcRequest('tools/call', {
+        name: 'qbit/addTorrent',
+        arguments: { url: 'ftp://invalid.protocol/file.torrent' },
+      });
+
+      const res = await request(app).post('/rpc').send(rpcRequest);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.result.isError).toBe(true);
+      expect(res.body.result.message).toContain('Invalid argument');
+    });
+
+    it('should handle missing tool arguments', async () => {
+      const rpcRequest = createRpcRequest('tools/call', {
+        name: 'qbit/addTorrent',
+        arguments: {},
+      });
+
+      const res = await request(app).post('/rpc').send(rpcRequest);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.result.isError).toBe(true);
+    });
+  });
 });

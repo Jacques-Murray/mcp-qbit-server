@@ -41,9 +41,15 @@ PORT=8000
 QBIT_BASE_URL=http://localhost:8080
 QBIT_USERNAME=admin
 QBIT_PASSWORD=secret
+QBIT_TIMEOUT=10000
 ```
 
-The qBittorrent credentials and `QBIT_BASE_URL` are required. `PORT` is optional and defaults to `8000`.
+### Configuration Options
+- **PORT** (optional): Server port, defaults to `8000`
+- **QBIT_BASE_URL** (required): qBittorrent WebUI URL (must start with http:// or https://)
+- **QBIT_USERNAME** (required): qBittorrent username
+- **QBIT_PASSWORD** (required): qBittorrent password
+- **QBIT_TIMEOUT** (optional): Request timeout in milliseconds, defaults to `10000` (10 seconds)
 
 ## Installation & Local Run
 ```bash
@@ -108,6 +114,11 @@ Tests live in `tests/mcp.test.js` and cover health checks, transport errors, and
 - The service is stateless; run behind any reverse proxy and scale horizontally.
 - Ensure qBittorrent WebUI API is reachable from this server and that credentials are scoped appropriately.
 - Consider setting `NODE_ENV=production` so Express omits stack traces.
+- **Security**: See [SECURITY.md](SECURITY.md) for security best practices, including:
+  - Running behind a reverse proxy with TLS/SSL
+  - Implementing rate limiting
+  - Using strong credentials
+  - Network isolation recommendations
 
 ## Contributing
 Guidelines live in `CONTRIBUTING.md`. In short: open an issue, run `npm test` before submitting, and document new tools.
