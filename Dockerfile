@@ -21,10 +21,13 @@ RUN npm test
 # Production stage
 FROM node:18-alpine AS production
 
+# Build argument for version (defaults to 1.0.0)
+ARG VERSION=1.0.0
+
 # Add labels for metadata
 LABEL maintainer="Jacques Murray <jacquesmmurray@gmail.com>"
 LABEL description="MCP Server for qBittorrent in Node.js"
-LABEL version="1.0.0"
+LABEL version="${VERSION}"
 
 # Create app directory
 WORKDIR /app
@@ -67,6 +70,9 @@ CMD ["node", "server.js"]
 
 # Build instructions:
 # docker build -t mcp-qbit-server:latest .
+#
+# To build with version from package.json:
+# docker build --build-arg VERSION=$(node -p "require('./package.json').version") -t mcp-qbit-server:latest .
 #
 # Run instructions:
 # docker run -d \
