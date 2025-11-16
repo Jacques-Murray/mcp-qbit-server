@@ -1,5 +1,9 @@
 // Author: Jacques Murray
 
+process.env.QBIT_BASE_URL = process.env.QBIT_BASE_URL || 'http://localhost:8080';
+process.env.QBIT_USERNAME = process.env.QBIT_USERNAME || 'test-user';
+process.env.QBIT_PASSWORD = process.env.QBIT_PASSWORD || 'test-pass';
+
 const request = require('supertest');
 const { createApp } = require('../app');
 const { QBitClient } = require('../lib/qbit/QBitClient');
@@ -153,5 +157,83 @@ describe('MCP Server (qBittorrent)', () => {
       // Ensure the client was not called
       expect(mockAddTorrent).not.toHaveBeenCalled();
     })
+  });
+
+  describe('JSON-RPC batch handling', () => {
+    it('should process a mixed batch of requests and notifications', async () => {
+      mockGetTorrents.mockResolvedValue([
+        { name: 'test.iso', hash: '123', size: 1000, progress: 1, state: 'seeding', eta: 0 },
+      ]);
+      mockAddTorrent.mockResolvedValue(true);
+      const magnetUrl = 'magnet:?xt=urn:btih:08ada5a7a6183aae1e09d83176f01c045d93a6da';
+
+      const batch = [
+        createRpcRequest('tools/call', {
+          name: 'qbit/getTorrents',
+          arguments: { filter: 'all' },
+        }),
+        { // Notification
+          jsonrpc: '2.0',
+          method: 'tools/call',
+          params: {
+            name: 'qbit/addTorrent',
+            arguments: { url: magnetUrl },
+          },
+        },
+        { // Invalid method
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'nonexistent/method',
+        },
+      ];
+
+      const res = await request(app).post('/rpc').send(batch);
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body).toHaveLength(2);
+
+      const successResponse = res.body.find((entry) => entry.id === 1);
+      expect(successResponse).toBeDefined();
+      expect(successResponse.result.isError).toBe(false);
+
+      const errorResponse = res.body.find((entry) => entry.id === 2);
+      expect(errorResponse).toBeDefined();
+      expect(errorResponse.error).toBeDefined();
+      expect(errorResponse.error.code).toBe(-32601);
+
+      expect(mockGetTorrents).toHaveBeenCalledTimes(1);
+      expect(mockAddTorrent).toHaveBeenCalledTimes(1); // Notification still executes
+    });
+
+    it('should return 204 when batch contains only notifications', async () => {
+      mockAddTorrent.mockResolvedValue(true);
+      const magnetUrl = 'magnet:?xt=urn:btih:08ada5a7a6183aae1e09d83176f01c045d93a6da';
+
+      const notifications = [
+        {
+          jsonrpc: '2.0',
+          method: 'tools/call',
+          params: {
+            name: 'qbit/addTorrent',
+            arguments: { url: magnetUrl },
+          },
+        }
+      ];
+
+      const res = await request(app).post('/rpc').send(notifications);
+
+      expect(res.statusCode).toBe(204);
+      expect(res.text).toBe('');
+      expect(mockAddTorrent).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reject an empty batch request', async () => {
+      const res = await request(app).post('/rpc').send([]);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.error).toBeDefined();
+      expect(res.body.error.code).toBe(-32600);
+    });
   });
 });
