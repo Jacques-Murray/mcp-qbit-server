@@ -19,7 +19,7 @@ const envSchema = z.object({
   QBIT_USERNAME: z.string({
     required_error: 'QBIT_USERNAME is required',
   }).min(1, 'QBIT_USERNAME cannot be empty')
-    .max(100, 'QBIT_USERNAME is too long'),
+    .max(255, 'QBIT_USERNAME is too long'),
   QBIT_PASSWORD: z.string({
     required_error: 'QBIT_PASSWORD is required',
   }).min(1, 'QBIT_PASSWORD cannot be empty'),
