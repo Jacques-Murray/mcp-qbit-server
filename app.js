@@ -36,7 +36,9 @@ function createApp() {
     next();
   });
   
-  app.use(express.json({ limit: '1mb' })); // Limit payload size
+  // Make JSON body size limit configurable via environment variable, defaulting to 5mb
+  const jsonBodyLimit = process.env.JSON_BODY_LIMIT || '5mb';
+  app.use(express.json({ limit: jsonBodyLimit })); // Limit payload size
 
   // --- 1. Create Dependencies (Dependency Injection) ---
 
