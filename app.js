@@ -113,7 +113,7 @@ function createApp() {
         error: {
           code: -32700,
           message: 'Parse error',
-          data: 'Invalid JSON format',
+          data: process.env.NODE_ENV !== 'production' ? 'Invalid JSON format' : undefined,
         },
       });
     }
